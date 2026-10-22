@@ -90,7 +90,7 @@ func checkPurgeable(a Account, cfg *Config, home string) (string, error) {
 		return "", err
 	}
 	if _, err := os.Stat(filepath.Join(real, markerFile)); err != nil {
-		return "", fmt.Errorf("%s wasn't created by csw (no %s marker), so csw won't trash it; to allow it: echo %s > %s/%s", a.Dir, markerFile, a.Name, a.Dir, markerFile)
+		return "", fmt.Errorf("%s wasn't created by csw (no %s marker), so csw won't delete it; to allow it: echo %s > %s/%s", a.Dir, markerFile, a.Name, a.Dir, markerFile)
 	}
 	return real, nil
 }
@@ -99,6 +99,16 @@ func checkPurgeable(a Account, cfg *Config, home string) (string, error) {
 // have ModeIrregular instead of ModeSymlink, and are not ModeDir either.
 func isLink(m fs.FileMode) bool {
 	return m&(fs.ModeSymlink|fs.ModeIrregular) != 0
+}
+
+// deleteAccountDir permanently deletes a folder that passed checkPurgeable.
+// Shared links go first, so nothing can reach into the root through them;
+// os.RemoveAll removes any other link without following it.
+func deleteAccountDir(root, path string, shared []string) error {
+	if err := unlinkShared(root, path, shared); err != nil {
+		return err
+	}
+	return os.RemoveAll(path)
 }
 
 func writeMarker(dir, name string) error {

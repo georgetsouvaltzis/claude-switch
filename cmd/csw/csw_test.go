@@ -233,22 +233,17 @@ func TestCheckPurgeable(t *testing.T) {
 
 func TestPurgeLeavesRootByteIdentical(t *testing.T) {
 	f := newFixture(t)
+	// A link csw didn't make, pointing into the root: deleting must not follow it.
+	must(t, os.Symlink(filepath.Join(f.root, "projects"), filepath.Join(f.home, ".claude-work", "stray-link")))
 	before := snapshot(t, f.root)
 
 	real, err := checkPurgeable(f.cfg.Accounts[1], f.cfg, f.home)
 	must(t, err)
-	must(t, unlinkShared(f.root, real, f.cfg.Shared))
-	trash := filepath.Join(f.home, "Trash")
-	dest, err := moveInto(trash, real)
-	must(t, err)
+	must(t, deleteAccountDir(f.root, real, f.cfg.Shared))
 
-	if _, err := os.Stat(real); err == nil {
+	if _, err := os.Lstat(real); err == nil {
 		t.Error("account dir still exists")
 	}
-	if b, err := os.ReadFile(filepath.Join(dest, "projects", "p", "work-session.jsonl")); err != nil || string(b) != "work" {
-		t.Errorf("trashed data not recoverable: %v", err)
-	}
-	must(t, os.RemoveAll(trash))
 	assertSnapshot(t, f.root, before)
 }
 
@@ -954,34 +949,5 @@ func TestTypoOfCaseOnly(t *testing.T) {
 	}
 	if got := typoOf("work", []string{"work"}); got != "" {
 		t.Errorf("exact match is not a typo: got %q", got)
-	}
-}
-
-func TestXDGTrash(t *testing.T) {
-	home := t.TempDir()
-	trash := filepath.Join(home, ".local", "share", "Trash")
-	victim := filepath.Join(home, "my dir%")
-	mustWrite(t, filepath.Join(victim, "a.txt"), "a")
-
-	dest, err := moveIntoXDGTrash(trash, victim)
-	must(t, err)
-	if b, err := os.ReadFile(filepath.Join(dest, "a.txt")); err != nil || string(b) != "a" {
-		t.Fatalf("content not in trash: %v", err)
-	}
-	if filepath.Dir(dest) != filepath.Join(trash, "files") {
-		t.Errorf("dest = %s", dest)
-	}
-	info, err := os.ReadFile(filepath.Join(trash, "info", filepath.Base(dest)+".trashinfo"))
-	must(t, err)
-	if !strings.HasPrefix(string(info), "[Trash Info]\nPath=/") || !strings.Contains(string(info), "/my%20dir%25\n") || !strings.Contains(string(info), "DeletionDate=") {
-		t.Errorf("trashinfo = %q (want an absolute, percent-encoded Path)", info)
-	}
-
-	// Same name in the same second: the second item gets its own slot.
-	mustWrite(t, filepath.Join(victim, "b.txt"), "b")
-	dest2, err := moveIntoXDGTrash(trash, victim)
-	must(t, err)
-	if dest2 == dest {
-		t.Error("second trash item overwrote the first")
 	}
 }

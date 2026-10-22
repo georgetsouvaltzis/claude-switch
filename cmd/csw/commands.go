@@ -423,14 +423,10 @@ func (a *app) remove(name string, o removeOpts) error {
 		}
 	}
 	if purgePath != "" {
-		if err := unlinkShared(a.cfg.rootDir(a.p.home), purgePath, a.cfg.Shared); err != nil {
+		if err := deleteAccountDir(a.cfg.rootDir(a.p.home), purgePath, a.cfg.Shared); err != nil {
 			return err
 		}
-		dest, err := moveToTrash(purgePath, a.p.home)
-		if err != nil {
-			return err
-		}
-		done("moved %s to %s", acct.Dir, dest)
+		done("deleted %s", acct.Dir)
 	}
 
 	a.cfg.remove(acct.Name)
@@ -460,11 +456,11 @@ func (a *app) removePlan(acct, root Account, o removeOpts, purgePath string) []s
 	steps := []string{"log out " + acct.Name + " (only this account)"}
 	switch {
 	case o.purge:
-		steps = append(steps, "move "+acct.Dir+" to the trash (sessions, history, settings)")
+		steps = append(steps, "permanently delete "+acct.Dir+" (sessions, history, settings)")
 	case o.sessions == keepMove:
 		steps = append(steps, "move its sessions into "+root.Name+" ("+a.cfg.Root+"/projects), never overwriting")
 		if purgePath != "" {
-			steps = append(steps, "move the rest of "+acct.Dir+" to the trash")
+			steps = append(steps, "permanently delete the rest of "+acct.Dir)
 		}
 	default:
 		steps = append(steps, "keep "+acct.Dir+" untouched")
@@ -472,7 +468,7 @@ func (a *app) removePlan(acct, root Account, o removeOpts, purgePath string) []s
 	return append(steps, "forget "+acct.Name+" in csw", "never touch "+a.cfg.Root)
 }
 
-// askRemoveMode hides the trash options when the folder can't be trashed, so
+// askRemoveMode hides the delete options when the folder can't be deleted, so
 // the user never picks a choice that is then refused.
 func askRemoveMode(acct, root Account, purgeErr error) (purge bool, sessions string, err error) {
 	choice := keepArchive
@@ -482,8 +478,8 @@ func askRemoveMode(acct, root Account, purgeErr error) (purge bool, sessions str
 	description := ""
 	if purgeErr == nil {
 		opts = append(opts,
-			huh.NewOption("Move sessions into "+root.Name+"  "+dimSty.Render("resumable there; the rest goes to the trash"), keepMove),
-			huh.NewOption("Delete everything  "+dimSty.Render("the folder goes to the trash"), "purge"))
+			huh.NewOption("Move sessions into "+root.Name+"  "+dimSty.Render("resumable there; the rest is deleted"), keepMove),
+			huh.NewOption("Delete everything  "+dimSty.Render("permanently, no undo"), "purge"))
 	} else {
 		opts = append(opts,
 			huh.NewOption("Move sessions into "+root.Name+"  "+dimSty.Render("resumable there; the folder is kept"), keepMove))
@@ -521,7 +517,7 @@ func confirmRemove(acct Account, o removeOpts) error {
 	}
 	var typed string
 	return huh.NewInput().
-		Title("Type " + acct.Name + " to delete everything").
+		Title("Type " + acct.Name + " to permanently delete " + acct.Dir).
 		Value(&typed).
 		Validate(func(s string) error {
 			if s != acct.Name {

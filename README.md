@@ -37,9 +37,12 @@ csw statusline colors    # pick its colors
 
 ## How it works
 
-Each account is its own Claude Code config folder (`~/.claude-work`), so each keeps its own login, sessions and history. Settings, `CLAUDE.md`, skills, plugins and the like are linked from your main folder (`~/.claude`), so they stay the same everywhere.
+Claude Code keeps an account's login and data in a config folder. Your existing `~/.claude` becomes the main account; every account you add gets its own folder, like `~/.claude-work`, and csw starts Claude with `CLAUDE_CONFIG_DIR` pointing at it.
 
-csw never deletes your main folder, and never deletes anything permanently: removed accounts go to the trash.
+- **Separate per account:** login, sessions and history, and the account's `.claude.json` state, such as MCP servers added with `claude mcp add`.
+- **Shared from `~/.claude`:** `settings.json`, `CLAUDE.md`, `keybindings.json`, `agents`, `commands`, `skills`, `plugins` and `output-styles`, as links. Something you create in `~/.claude` later is linked into each account the next time csw starts it. If an account already has its own copy of an item, csw leaves it alone. The `shared` list in `~/.config/csw/config.toml` controls what's linked.
+
+Removing an account asks what to do with its data: keep the folder, move its sessions to the main account, or delete it. Deleting is permanent. csw never deletes `~/.claude`, and only deletes folders it created itself.
 
 ## License
 

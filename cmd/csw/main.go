@@ -47,10 +47,11 @@ Examples:
 
 Logs the account out and forgets it. Without a name, asks which one. You choose what happens to its data:
   --sessions archive  keep its folder untouched (restore with csw add --dir)
-  --sessions move     move its sessions into the root account, trash the rest
-  --purge             move the whole folder to the trash
+  --sessions move     move its sessions into the root account, delete the rest
+  --purge             permanently delete the whole folder
 
-The root folder is never touched. Only folders csw created can be trashed.
+Deleting is permanent. The root folder is never touched, and only folders
+csw created can be deleted.
 
 Flags:
   -n, --dry-run  show what would happen
