@@ -2,7 +2,7 @@
 
 Switch between Claude subscriptions in Claude Code. Separate logins, shared settings, and the active account in your status line.
 
-![Picking an account and starting Claude Code](docs/images/demo.svg)
+![Picking an account with csw](docs/images/demo.gif)
 
 ## Install
 
@@ -12,9 +12,13 @@ go install github.com/georgetsouvaltzis/claude-switch/cmd/csw@latest
 
 Requires [Claude Code](https://code.claude.com/docs/en/setup). If it's missing, csw offers to install it.
 
-## Usage
+## Get started
 
-Run `csw` once to set up your accounts, then:
+Run `csw`. The first run finds your current login, names it, and helps you add more accounts.
+
+![First-run setup](docs/images/onboarding.gif)
+
+## Usage
 
 ```sh
 csw                      # pick an account
@@ -26,14 +30,25 @@ csw add <name>           # add an account
 csw rename <old> <new>   # rename an account
 csw remove <name>        # log out and remove an account
 csw status               # list accounts and logins
-
-csw statusline install   # show the account and email in Claude's status line
-csw statusline colors    # pick its colors
 ```
 
 `csw <command> --help` shows every option.
 
-![Account and email in Claude's status line](docs/images/statusline.svg)
+## Status line
+
+`csw statusline install` shows the account and the email it's signed in with at the bottom of Claude Code:
+
+![csw's status line in Claude Code](docs/images/claude.gif)
+
+`csw statusline colors` picks its colors, for all accounts or one at a time:
+
+![Picking status line colors](docs/images/colors.gif)
+
+## Removing an account
+
+`csw remove` asks what to do with the account's data: keep the folder, move its sessions to the main account, or delete it. Deleting is permanent, so you type the account name to confirm.
+
+![Removing an account](docs/images/remove.gif)
 
 ## How it works
 
@@ -42,7 +57,7 @@ Claude Code keeps an account's login and data in a config folder. Your existing 
 - **Separate per account:** login, sessions and history, and the account's `.claude.json` state, such as MCP servers added with `claude mcp add`.
 - **Shared from `~/.claude`:** `settings.json`, `CLAUDE.md`, `keybindings.json`, `agents`, `commands`, `skills`, `plugins` and `output-styles`, as links. Something you create in `~/.claude` later is linked into each account the next time csw starts it. If an account already has its own copy of an item, csw leaves it alone. The `shared` list in `~/.config/csw/config.toml` controls what's linked.
 
-Removing an account asks what to do with its data: keep the folder, move its sessions to the main account, or delete it. Deleting is permanent. csw never deletes `~/.claude`, and only deletes folders it created itself.
+csw never deletes `~/.claude`, and only deletes folders it created itself.
 
 ## License
 

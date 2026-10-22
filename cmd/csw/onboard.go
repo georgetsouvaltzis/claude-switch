@@ -135,7 +135,7 @@ func (a *app) installStatusline() error {
 		hint("your previous status line still runs: " + ch.Wrapped)
 	}
 	if ch.Backup != "" {
-		hint("backup: " + ch.Backup)
+		hint("backup: " + abbreviateHome(ch.Backup, a.p.home))
 	}
 	return nil
 }
