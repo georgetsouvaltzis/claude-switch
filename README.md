@@ -6,9 +6,19 @@ Switch between Claude subscriptions in Claude Code. Separate logins, shared sett
 
 ## Install
 
+**Homebrew (macOS, Linux):**
+
+```sh
+brew install georgetsouvaltzis/tap/csw
+```
+
+**With Go:**
+
 ```sh
 go install github.com/georgetsouvaltzis/claude-switch/cmd/csw@latest
 ```
+
+Or download a binary for macOS, Linux or Windows from [Releases](https://github.com/georgetsouvaltzis/claude-switch/releases).
 
 Requires [Claude Code](https://code.claude.com/docs/en/setup). If it's missing, csw offers to install it.
 

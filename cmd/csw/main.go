@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime/debug"
 	"slices"
 	"strings"
 
@@ -12,7 +13,25 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
+// version is set at build time (-ldflags "-X main.version=0.1.0") by
+// GoReleaser and the Homebrew formula. `go install` sets no flags, so
+// cswVersion falls back to the module version Go records in the binary.
 var version = "dev"
+
+func cswVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return version
+	}
+	return versionFrom(version, info.Main.Version)
+}
+
+func versionFrom(ldflag, module string) string {
+	if ldflag != "dev" || module == "" || module == "(devel)" {
+		return ldflag
+	}
+	return strings.TrimPrefix(module, "v")
+}
 
 type subcommand struct {
 	name    string
@@ -630,7 +649,7 @@ func help(p paths, args []string) error {
 }
 
 func printVersion(p paths) error {
-	fmt.Println("csw " + version)
+	fmt.Println("csw " + cswVersion())
 	if claude, _, err := findClaude(p.home); err == nil {
 		fmt.Println("claude " + claudeVersion(claude))
 	} else {

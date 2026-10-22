@@ -951,3 +951,18 @@ func TestTypoOfCaseOnly(t *testing.T) {
 		t.Errorf("exact match is not a typo: got %q", got)
 	}
 }
+
+func TestVersionFrom(t *testing.T) {
+	cases := []struct{ ldflag, module, want string }{
+		{"0.1.0", "v0.2.0", "0.1.0"}, // build flag wins (GoReleaser, Homebrew)
+		{"dev", "v0.1.0", "0.1.0"},   // go install module@v0.1.0
+		{"dev", "(devel)", "dev"},    // local go build
+		{"dev", "", "dev"},
+		{"dev", "v0.1.1-0.20261023-abcdef", "0.1.1-0.20261023-abcdef"},
+	}
+	for _, c := range cases {
+		if got := versionFrom(c.ldflag, c.module); got != c.want {
+			t.Errorf("versionFrom(%q, %q) = %q, want %q", c.ldflag, c.module, got, c.want)
+		}
+	}
+}
