@@ -1,4 +1,4 @@
-module claude-switch
+module github.com/georgetsouvaltzis/claude-switch
 
 go 1.25.4
 
