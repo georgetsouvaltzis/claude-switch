@@ -12,6 +12,13 @@ Switch between Claude subscriptions in Claude Code. Separate logins, shared sett
 brew install georgetsouvaltzis/tap/csw
 ```
 
+**Windows (Scoop):**
+
+```powershell
+scoop bucket add csw https://github.com/georgetsouvaltzis/scoop-bucket
+scoop install csw
+```
+
 **With Go:**
 
 ```sh

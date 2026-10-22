@@ -2,7 +2,8 @@ name: Release
 
 # Runs when a release is published (Releases -> Draft a new release, with a
 # new tag like 0.1.0). Tests the tagged commit, attaches the binaries to that
-# release and updates the Homebrew formula in georgetsouvaltzis/homebrew-tap.
+# release, and updates the Homebrew formula (georgetsouvaltzis/homebrew-tap)
+# and the Scoop manifest (georgetsouvaltzis/scoop-bucket).
 on:
   release:
     types: [published]
@@ -49,19 +50,26 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
           # Both tags sit on this commit; release the one that was published.
           GORELEASER_CURRENT_TAG: ${{ github.event.release.tag_name }}
 
       - name: Update Homebrew formula
         if: ${{ !github.event.release.prerelease }}
         env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAP_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
         run: |
-          url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
-          sha=$(curl -fsSL "$url" | sha256sum | cut -d' ' -f1)
+          sha() { grep "csw_${TAG}_$1.tar.gz" dist/checksums.txt | cut -d' ' -f1; }
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/georgetsouvaltzis/homebrew-tap.git" tap
           mkdir -p tap/Formula
-          sed -e "s/VERSION/${TAG}/g" -e "s/SHA256/${sha}/" -e '/^# /d' .github/homebrew/csw.rb > tap/Formula/csw.rb
+          sed -e '/^# /d' -e "s/VERSION/${TAG}/g" \
+            -e "s/SHA_DARWIN_ARM64/$(sha darwin_arm64)/" -e "s/SHA_DARWIN_AMD64/$(sha darwin_amd64)/" \
+            -e "s/SHA_LINUX_ARM64/$(sha linux_arm64)/" -e "s/SHA_LINUX_AMD64/$(sha linux_amd64)/" \
+            .github/homebrew/csw.rb > tap/Formula/csw.rb
+          if grep -q 'sha256 ""' tap/Formula/csw.rb; then
+            echo "::error::a checksum is missing from dist/checksums.txt"
+            exit 1
+          fi
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
