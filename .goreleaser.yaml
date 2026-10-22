@@ -45,6 +45,8 @@ scoops:
     commit_msg_template: "csw {{ .Tag }}"
 
 # The release already exists (published from the GitHub UI): keep its title
-# and notes, only attach the archives.
+# and notes, only attach the archives. Replacing existing files makes a
+# re-run of a failed release safe.
 release:
   mode: keep-existing
+  replace_existing_artifacts: true
