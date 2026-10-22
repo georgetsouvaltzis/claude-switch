@@ -26,3 +26,8 @@ checksum:
 changelog:
   use: github
   sort: asc
+
+# The release already exists (published from the GitHub UI): keep its title
+# and notes, only attach the archives.
+release:
+  mode: keep-existing

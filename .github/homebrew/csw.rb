@@ -3,7 +3,7 @@
 class Csw < Formula
   desc "Switch between Claude subscriptions in Claude Code"
   homepage "https://github.com/georgetsouvaltzis/claude-switch"
-  url "https://github.com/georgetsouvaltzis/claude-switch/archive/refs/tags/vVERSION.tar.gz"
+  url "https://github.com/georgetsouvaltzis/claude-switch/archive/refs/tags/VERSION.tar.gz"
   sha256 "SHA256"
   license "MIT"
 
