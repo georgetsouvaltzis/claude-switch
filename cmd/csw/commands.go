@@ -142,7 +142,7 @@ func (a *app) addAccount(name, dir string, login bool) (Account, error) {
 		return Account{}, err
 	}
 	if len(res.Linked) > 0 {
-		hint("shared from " + a.cfg.Root + ": " + strings.Join(res.Linked, ", "))
+		hint("shared from " + shownPath(a.cfg.Root) + ": " + strings.Join(res.Linked, ", "))
 	}
 	if len(res.Conflicts) > 0 {
 		warn("kept existing, not shared: " + strings.Join(res.Conflicts, ", "))
@@ -153,7 +153,7 @@ func (a *app) addAccount(name, dir string, login bool) (Account, error) {
 	if err := a.save(); err != nil {
 		return Account{}, err
 	}
-	done("added %s (%s)", nameSty.Render(name), acct.Dir)
+	done("added %s (%s)", nameSty.Render(name), shownPath(acct.Dir))
 	if !login {
 		return acct, nil
 	}
@@ -235,7 +235,7 @@ func (a *app) rename(args []string, move bool) error {
 	if err := a.save(); err != nil {
 		return err
 	}
-	done("renamed %s to %s (folder unchanged: %s; --move renames it too)", acct.Name, newName, acct.Dir)
+	done("renamed %s to %s (folder unchanged: %s; --move renames it too)", acct.Name, newName, shownPath(acct.Dir))
 	return nil
 }
 
@@ -263,7 +263,7 @@ func moveTarget(dir, newName string) string {
 
 func (a *app) renameAndMove(acct Account, newName string) error {
 	if a.cfg.isRoot(acct, a.p.home) {
-		return fmt.Errorf("%s uses the root folder %s, which can't move; rename it without --move", acct.Name, a.cfg.Root)
+		return fmt.Errorf("%s uses the root folder %s, which can't move; rename it without --move", acct.Name, shownPath(a.cfg.Root))
 	}
 	if a.claude == "" {
 		return errClaudeMissing
@@ -271,10 +271,10 @@ func (a *app) renameAndMove(acct Account, newName string) error {
 	from := a.cfg.dir(acct, a.p.home)
 	to := moveTarget(from, newName)
 	if _, err := os.Stat(from); err != nil {
-		return fmt.Errorf("%s is missing; rename without --move", acct.Dir)
+		return fmt.Errorf("%s is missing; rename without --move", shownPath(acct.Dir))
 	}
 	if _, err := os.Lstat(to); err == nil {
-		return fmt.Errorf("%s already exists", abbreviateHome(to, a.p.home))
+		return fmt.Errorf("%s already exists", shownPath(abbreviateHome(to, a.p.home)))
 	}
 	if err := checkAccountDir(to, a.cfg, a.p.home, acct.Name); err != nil {
 		return err
@@ -287,7 +287,7 @@ func (a *app) renameAndMove(acct Account, newName string) error {
 	}
 	ok, err := confirm(fmt.Sprintf("Rename %s to %s and move its folder?", acct.Name, newName),
 		fmt.Sprintf("Moves %s to %s. Sessions and settings move with it.\n%s\nClose any open %s sessions first.",
-			acct.Dir, shownTo, login, acct.Name), false)
+			shownPath(acct.Dir), shownPath(shownTo), login, acct.Name), false)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (a *app) renameAndMove(acct Account, newName string) error {
 	if err != nil {
 		return err
 	}
-	done("renamed %s to %s and moved its folder to %s", acct.Name, newName, moved.Dir)
+	done("renamed %s to %s and moved its folder to %s", acct.Name, newName, shownPath(moved.Dir))
 	if st := fetchStatus(a.claude, a.env(moved)); st.LoggedIn {
 		done("%s is still logged in as %s", newName, st.Email)
 		return nil
@@ -325,14 +325,14 @@ func (a *app) moveAccount(acct Account, newName, to string, logoutFirst bool) (A
 	}
 	if err := os.Rename(a.cfg.dir(acct, a.p.home), to); err != nil {
 		if logoutFirst {
-			return acct, fmt.Errorf("moving %s: %w (%s is logged out; log back in: csw %s auth login)", acct.Dir, err, acct.Name, acct.Name)
+			return acct, fmt.Errorf("moving %s: %w (%s is logged out; log back in: csw %s auth login)", shownPath(acct.Dir), err, acct.Name, acct.Name)
 		}
-		return acct, fmt.Errorf("moving %s: %w (nothing changed)", acct.Dir, err)
+		return acct, fmt.Errorf("moving %s: %w (nothing changed)", shownPath(acct.Dir), err)
 	}
 	shownTo := abbreviateHome(to, a.p.home)
 	a.applyRename(acct, newName, shownTo)
 	if err := a.save(); err != nil {
-		return acct, fmt.Errorf("%w; the folder is now %s, fix dir for %s in %s", err, shownTo, acct.Name, a.p.config)
+		return acct, fmt.Errorf("%w; the folder is now %s, fix dir for %s in %s", err, shownPath(shownTo), acct.Name, a.p.config)
 	}
 	moved, _ := a.cfg.find(newName)
 	return moved, nil
@@ -365,7 +365,7 @@ func (a *app) remove(name string, o removeOpts) error {
 		return err
 	}
 	if a.cfg.isRoot(acct, a.p.home) {
-		return fmt.Errorf("%s is the root account (%s) and can't be removed", acct.Name, a.cfg.Root)
+		return fmt.Errorf("%s is the root account (%s) and can't be removed", acct.Name, shownPath(a.cfg.Root))
 	}
 	root := a.rootAccount()
 
@@ -395,7 +395,7 @@ func (a *app) remove(name string, o removeOpts) error {
 	}
 
 	steps := a.removePlan(acct, root, o, purgePath)
-	fmt.Fprintln(os.Stderr, nameSty.Render("Removing "+acct.Name)+dimSty.Render("  "+acct.Dir))
+	fmt.Fprintln(os.Stderr, nameSty.Render("Removing "+acct.Name)+dimSty.Render("  "+shownPath(acct.Dir)))
 	for _, s := range steps {
 		fmt.Fprintln(os.Stderr, "  • "+s)
 	}
@@ -426,7 +426,7 @@ func (a *app) remove(name string, o removeOpts) error {
 		if err := deleteAccountDir(a.cfg.rootDir(a.p.home), purgePath, a.cfg.Shared); err != nil {
 			return err
 		}
-		done("deleted %s", acct.Dir)
+		done("deleted %s", shownPath(acct.Dir))
 	}
 
 	a.cfg.remove(acct.Name)
@@ -438,7 +438,7 @@ func (a *app) remove(name string, o removeOpts) error {
 	}
 	done("removed %s", nameSty.Render(acct.Name))
 	if o.sessions == keepArchive {
-		hint(fmt.Sprintf("restore later with: csw add %s --dir %s", acct.Name, acct.Dir))
+		hint(fmt.Sprintf("restore later with: csw add %s --dir %s", acct.Name, shownPath(acct.Dir)))
 	}
 	return nil
 }
@@ -456,16 +456,16 @@ func (a *app) removePlan(acct, root Account, o removeOpts, purgePath string) []s
 	steps := []string{"log out " + acct.Name + " (only this account)"}
 	switch {
 	case o.purge:
-		steps = append(steps, "permanently delete "+acct.Dir+" (sessions, history, settings)")
+		steps = append(steps, "permanently delete "+shownPath(acct.Dir)+" (sessions, history, settings)")
 	case o.sessions == keepMove:
-		steps = append(steps, "move its sessions into "+root.Name+" ("+a.cfg.Root+"/projects), never overwriting")
+		steps = append(steps, "move its sessions into "+root.Name+" ("+shownPath(a.cfg.Root+"/projects")+"), never overwriting")
 		if purgePath != "" {
-			steps = append(steps, "permanently delete the rest of "+acct.Dir)
+			steps = append(steps, "permanently delete the rest of "+shownPath(acct.Dir))
 		}
 	default:
-		steps = append(steps, "keep "+acct.Dir+" untouched")
+		steps = append(steps, "keep "+shownPath(acct.Dir)+" untouched")
 	}
-	return append(steps, "forget "+acct.Name+" in csw", "never touch "+a.cfg.Root)
+	return append(steps, "forget "+acct.Name+" in csw", "never touch "+shownPath(a.cfg.Root))
 }
 
 // askRemoveMode hides the delete options when the folder can't be deleted, so
@@ -473,7 +473,7 @@ func (a *app) removePlan(acct, root Account, o removeOpts, purgePath string) []s
 func askRemoveMode(acct, root Account, purgeErr error) (purge bool, sessions string, err error) {
 	choice := keepArchive
 	opts := []huh.Option[string]{
-		huh.NewOption("Keep sessions in "+acct.Dir+"  "+dimSty.Render("nothing is deleted; restore any time"), keepArchive),
+		huh.NewOption("Keep sessions in "+shownPath(acct.Dir)+"  "+dimSty.Render("nothing is deleted; restore any time"), keepArchive),
 	}
 	description := ""
 	if purgeErr == nil {
@@ -517,7 +517,7 @@ func confirmRemove(acct Account, o removeOpts) error {
 	}
 	var typed string
 	return huh.NewInput().
-		Title("Type " + acct.Name + " to permanently delete " + acct.Dir).
+		Title("Type " + acct.Name + " to permanently delete " + shownPath(acct.Dir)).
 		Value(&typed).
 		Validate(func(s string) error {
 			if s != acct.Name {

@@ -60,15 +60,15 @@ func checkAccountDir(dir string, cfg *Config, home, self string) error {
 	case filepath.Dir(dir) == dir:
 		return fmt.Errorf("%s is a filesystem root", dir)
 	case within(dir, root):
-		return fmt.Errorf("%s is the root Claude directory or inside it (%s)", dir, cfg.Root)
+		return fmt.Errorf("%s is the root Claude directory or inside it (%s)", dir, shownPath(cfg.Root))
 	case within(root, dir):
-		return fmt.Errorf("%s contains the root Claude directory (%s)", dir, cfg.Root)
+		return fmt.Errorf("%s contains the root Claude directory (%s)", dir, shownPath(cfg.Root))
 	case within(home, dir):
 		return fmt.Errorf("%s is or contains your home directory", dir)
 	}
 	for _, a := range cfg.Accounts {
 		if a.Name != self && overlaps(dir, cfg.dir(a, home)) {
-			return fmt.Errorf("%s overlaps account %q (%s)", dir, a.Name, a.Dir)
+			return fmt.Errorf("%s overlaps account %q (%s)", dir, a.Name, shownPath(a.Dir))
 		}
 	}
 	return nil
@@ -81,7 +81,7 @@ func checkPurgeable(a Account, cfg *Config, home string) (string, error) {
 	dir := cfg.dir(a, home)
 	real, err := filepath.EvalSymlinks(dir)
 	if errors.Is(err, fs.ErrNotExist) {
-		return "", fmt.Errorf("%s doesn't exist", a.Dir)
+		return "", fmt.Errorf("%s doesn't exist", shownPath(a.Dir))
 	}
 	if err != nil {
 		return "", err
@@ -90,7 +90,7 @@ func checkPurgeable(a Account, cfg *Config, home string) (string, error) {
 		return "", err
 	}
 	if _, err := os.Stat(filepath.Join(real, markerFile)); err != nil {
-		return "", fmt.Errorf("%s wasn't created by csw (no %s marker), so csw won't delete it; to allow it: echo %s > %s/%s", a.Dir, markerFile, a.Name, a.Dir, markerFile)
+		return "", fmt.Errorf("%s wasn't created by csw (no %s marker), so csw won't delete it; to allow it: echo %s > %s", shownPath(a.Dir), markerFile, a.Name, shownPath(a.Dir+"/"+markerFile))
 	}
 	return real, nil
 }

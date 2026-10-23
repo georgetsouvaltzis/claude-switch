@@ -78,7 +78,7 @@ func onboard(p paths) (*app, error) {
 	}
 
 	install, err := confirm("Show the account and email in Claude's status line?",
-		"Edits "+a.cfg.Root+"/settings.json (a backup is kept). An existing status line keeps working.", true)
+		"Edits "+shownPath(a.cfg.Root+"/settings.json")+" (a backup is kept). An existing status line keeps working.", true)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func onboard(p paths) (*app, error) {
 }
 
 func askRoot(detected, home string) (string, error) {
-	keep, err := confirm("Is "+detected+" your main Claude folder?",
+	keep, err := confirm("Is "+shownPath(detected)+" your main Claude folder?",
 		"Your current login lives here. csw never deletes this folder or anything in it.", true)
 	if err != nil || keep {
 		return detected, err
@@ -102,7 +102,7 @@ func askRoot(detected, home string) (string, error) {
 	err = huh.NewInput().
 		Title("Your main Claude folder").
 		Description("csw never deletes this folder or anything in it.").
-		Placeholder(detected).
+		Placeholder(shownPath(detected)).
 		Value(&custom).
 		Validate(func(s string) error {
 			if strings.TrimSpace(s) == "" {
@@ -135,7 +135,7 @@ func (a *app) installStatusline() error {
 		hint("your previous status line still runs: " + ch.Wrapped)
 	}
 	if ch.Backup != "" {
-		hint("backup: " + abbreviateHome(ch.Backup, a.p.home))
+		hint("backup: " + shownPath(abbreviateHome(ch.Backup, a.p.home)))
 	}
 	return nil
 }

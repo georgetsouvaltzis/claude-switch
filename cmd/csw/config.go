@@ -96,7 +96,13 @@ func detectRoot(home string) string {
 	return defaultClaudeDir(home)
 }
 
+// expandHome also takes %USERPROFILE%, which Windows users type and see in
+// csw's messages.
 func expandHome(path, home string) string {
+	const profile = "%USERPROFILE%"
+	if len(path) >= len(profile) && strings.EqualFold(path[:len(profile)], profile) {
+		path = "~" + path[len(profile):]
+	}
 	if path == "~" {
 		return home
 	}
@@ -104,6 +110,22 @@ func expandHome(path, home string) string {
 		return filepath.Join(home, path[2:])
 	}
 	return filepath.Clean(path)
+}
+
+// shownPath renders a config path for messages. The config keeps "~/" so it
+// works on every OS; Windows users read %USERPROFILE%\ instead, the way
+// Claude Code's docs write it.
+func shownPath(p string) string { return shownPathFor(p, isWindows) }
+
+func shownPathFor(p string, windows bool) string {
+	if !windows {
+		return p
+	}
+	p = strings.ReplaceAll(p, "/", `\`)
+	if rest, ok := strings.CutPrefix(p, `~\`); ok {
+		return `%USERPROFILE%\` + rest
+	}
+	return p
 }
 
 func abbreviateHome(path, home string) string {

@@ -966,3 +966,32 @@ func TestVersionFrom(t *testing.T) {
 		}
 	}
 }
+
+func TestShownPathOnWindows(t *testing.T) {
+	cases := []struct{ in, unix, windows string }{
+		{"~/.claude", "~/.claude", `%USERPROFILE%\.claude`},
+		{"~/.claude/settings.json", "~/.claude/settings.json", `%USERPROFILE%\.claude\settings.json`},
+		{"~/accounts/acme", "~/accounts/acme", `%USERPROFILE%\accounts\acme`},
+		{`D:\claude\work`, `D:\claude\work`, `D:\claude\work`},
+	}
+	for _, c := range cases {
+		if got := shownPathFor(c.in, false); got != c.unix {
+			t.Errorf("unix %q: got %q", c.in, got)
+		}
+		if got := shownPathFor(c.in, true); got != c.windows {
+			t.Errorf("windows %q: got %q, want %q", c.in, got, c.windows)
+		}
+	}
+}
+
+func TestExpandHomeTakesUserProfile(t *testing.T) {
+	home := "/home/u"
+	for _, in := range []string{"%USERPROFILE%/.claude", "%userprofile%/.claude", "~/.claude"} {
+		if got := expandHome(in, home); got != filepath.Join(home, ".claude") {
+			t.Errorf("expandHome(%q) = %q", in, got)
+		}
+	}
+	if got := expandHome("%USERPROFILE%", home); got != home {
+		t.Errorf("bare %%USERPROFILE%% = %q", got)
+	}
+}
